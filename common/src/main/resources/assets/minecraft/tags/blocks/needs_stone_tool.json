@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "asicraft:microchip_designer",
+    "asicraft:card_builder",
+    "asicraft:expansion_bus_tier1",
+    "asicraft:expansion_bus_tier2",
+    "asicraft:expansion_bus_tier3"
+  ]
+}

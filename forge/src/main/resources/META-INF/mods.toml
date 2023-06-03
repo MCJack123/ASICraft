@@ -1,0 +1,42 @@
+modLoader = "javafml"
+loaderVersion = "[45,)"
+#issueTrackerURL = ""
+license = "GPLv2"
+
+[[mods]]
+modId = "asicraft"
+version = "${version}"
+displayName = "ASICraft"
+authors = "JackMacWindows"
+description = '''
+Adds ASIC acceleration cards and peripherals for CC:Tweaked.
+'''
+#logoFile = ""
+
+[[dependencies.asicraft]]
+modId = "forge"
+mandatory = true
+versionRange = "[45,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.asicraft]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.19.4,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.asicraft]]
+modId = "architectury"
+mandatory = true
+versionRange = "[8.1.79,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.asicraft]]
+modId = "computercraft"
+mandatory = true
+versionRange = "[1.104.0,)"
+ordering = "NONE"
+side = "BOTH"

@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_top",
+  "textures": {
+    "side": "asicraft:block/microchip_designer_side",
+    "top": "asicraft:block/microchip_designer_top"
+  }
+}

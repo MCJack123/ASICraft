@@ -1,0 +1,19 @@
+{
+  "block.asicraft.card_builder": "Card Builder",
+  "block.asicraft.expansion_bus_tier1": "Expansion Bus (Tier 1)",
+  "block.asicraft.expansion_bus_tier2": "Expansion Bus (Tier 2)",
+  "block.asicraft.expansion_bus_tier3": "Expansion Bus (Tier 3)",
+  "block.asicraft.microchip_designer": "Microchip Designer",
+  "item.asicraft.accelerator_card": "Accelerator Card",
+  "item.asicraft.card_builder": "Card Builder",
+  "item.asicraft.circuit_board": "Circuit Board",
+  "item.asicraft.expansion_bus_tier1": "Expansion Bus (Tier 1)",
+  "item.asicraft.expansion_bus_tier2": "Expansion Bus (Tier 2)",
+  "item.asicraft.expansion_bus_tier3": "Expansion Bus (Tier 3)",
+  "item.asicraft.microchip": "Microchip",
+  "item.asicraft.microchip_designer": "Microchip Designer",
+  "item.asicraft.microchip_recipe": "Microchip Recipe",
+  "itemGroup.asicraft": "ASICraft",
+  "algorithm.asicraft.encode_aes": "AES Encryptor",
+  "algorithm.asicraft.decode_aes": "AES Decryptor"
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_top",
+  "textures": {
+    "side": "asicraft:block/expansion_bus_t1_side",
+    "top": "asicraft:block/expansion_bus_top"
+  }
+}

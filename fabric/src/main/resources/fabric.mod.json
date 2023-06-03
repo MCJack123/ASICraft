@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "asicraft",
+  "version": "${version}",
+  "name": "ASICraft",
+  "description": "Adds ASIC acceleration cards and peripherals for CC:Tweaked.",
+  "authors": [
+    "JackMacWindows"
+  ],
+  "contact": {
+    "homepage": "https://github.com/MCJack123/ASICraft",
+    "sources": "https://github.com/MCJack123/ASICraft"
+  },
+  "license": "GPLv2",
+  "icon": "assets/asicraft/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "cc.craftospc.ASICraft.fabric.ASICraftFabric"
+    ],
+    "client": [
+      "cc.craftospc.ASICraft.fabric.ASICraftFabricClient"
+    ]
+  },
+  "depends": {
+    "fabric": "*",
+    "minecraft": ">=1.19.4",
+    "architectury": ">=8.1.79",
+    "computercraft": ">=1.104.0"
+  }
+}

@@ -1,5 +1,9 @@
-package cc.craftospc.ASICraft.algorithms;
+package cc.craftospc.ASICraft.algorithms.crypto;
 
+import cc.craftospc.ASICraft.algorithms.AlgorithmRegistry;
+import cc.craftospc.ASICraft.algorithms.IAlgorithm;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmFinishCallback;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmPartialResultCallback;
 import dan200.computercraft.api.lua.IArguments;
 import dan200.computercraft.api.lua.LuaException;
 
@@ -43,23 +47,25 @@ public class RSAKeyGeneratorAlgorithm implements IAlgorithm {
     }
 
     @Override
-    public void input(IArguments args) throws LuaException {
+    public void input(IArguments args, IAlgorithmPartialResultCallback callback) throws LuaException {
 
     }
 
     @Override
     public void finish(IAlgorithmFinishCallback callback) throws LuaException {
-        try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(keySize);
-            KeyPair pair = generator.generateKeyPair();
-            RSAPrivateKey privateKey = (RSAPrivateKey) pair.getPrivate();
-            RSAPublicKey publicKey = (RSAPublicKey) pair.getPublic();
-            Map<String, String> retval = new HashMap<>();
-            retval.put("private", encodeKey(privateKey.getModulus(), privateKey.getPrivateExponent()));
-            retval.put("public", encodeKey(publicKey.getModulus(), publicKey.getPublicExponent()));
-            callback.finish(null, retval);
-        } catch (NoSuchAlgorithmException ignored) {}
+        AlgorithmRegistry.queueWork(() -> {
+            try {
+                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                generator.initialize(keySize);
+                KeyPair pair = generator.generateKeyPair();
+                RSAPrivateKey privateKey = (RSAPrivateKey) pair.getPrivate();
+                RSAPublicKey publicKey = (RSAPublicKey) pair.getPublic();
+                Map<String, String> retval = new HashMap<>();
+                retval.put("private", encodeKey(privateKey.getModulus(), privateKey.getPrivateExponent()));
+                retval.put("public", encodeKey(publicKey.getModulus(), publicKey.getPublicExponent()));
+                callback.finish(null, retval);
+            } catch (NoSuchAlgorithmException ignored) {}
+        });
     }
 
     private int tagLength(int n) {

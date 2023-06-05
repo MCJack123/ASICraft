@@ -14,19 +14,37 @@ import cc.craftospc.ASICraft.item.MicrochipRecipeItem;
 import cc.craftospc.ASICraft.menu.CardBuilderMenu;
 import cc.craftospc.ASICraft.menu.ExpansionBusMenu;
 import cc.craftospc.ASICraft.menu.MicrochipDesignerMenu;
+import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.LootEvent;
 import dev.architectury.registry.CreativeTabRegistry;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.data.loot.packs.VanillaChestLoot;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.levelgen.structure.structures.StrongholdStructure;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.LootTables;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctions;
+import net.minecraft.world.level.storage.loot.functions.SetNbtFunction;
+import net.minecraft.world.level.storage.loot.providers.number.BinomialDistributionGenerator;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,6 +115,8 @@ public final class Registry {
         BlockEntities.REGISTRY.register();
         Items.REGISTRY.register();
         Menus.REGISTRY.register();
+        LifecycleEvent.SERVER_STOPPING.register((a) -> AlgorithmRegistry.shutdown());
+        LootEvent.MODIFY_LOOT_TABLE.register(Registry::registerLoot);
     }
 
     public static void registerClient() {
@@ -134,5 +154,17 @@ public final class Registry {
                     out.accept(stack);
                 }
             });
+    }
+
+    public static void registerLoot(LootTables lootManager, ResourceLocation id, LootEvent.LootTableModificationContext context, boolean builtin) {
+        if (builtin && BuiltInLootTables.STRONGHOLD_LIBRARY.equals(id)) {
+            LootPool.Builder builder = LootPool.lootPool().setRolls(BinomialDistributionGenerator.binomial(2, 0.05f));
+            for (String algo : AlgorithmRegistry.ALGORITHMS) {
+                CompoundTag tag = new CompoundTag();
+                tag.putString("Algorithm", algo);
+                builder.add(LootItem.lootTableItem(Items.MICROCHIP_RECIPE.get()).apply(SetNbtFunction.setTag(tag)));
+            }
+            context.addPool(builder);
+        }
     }
 }

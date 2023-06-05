@@ -1,7 +1,6 @@
 package cc.craftospc.ASICraft.fabric;
 
 import cc.craftospc.ASICraft.ASICraft;
-import cc.craftospc.ASICraft.algorithms.ExpansionBusPeripheral;
 import cc.craftospc.ASICraft.util.Registry;
 import dan200.computercraft.api.peripheral.PeripheralLookup;
 import net.fabricmc.api.ModInitializer;

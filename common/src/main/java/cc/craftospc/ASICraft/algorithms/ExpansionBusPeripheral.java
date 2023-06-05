@@ -70,10 +70,20 @@ public class ExpansionBusPeripheral implements IPeripheral {
     }
 
     @LuaFunction
-    public final void input(IArguments args) throws LuaException {
+    public final void input(IComputerAccess computer, IArguments args) throws LuaException {
         int slot = args.getInt(0);
         if (slot >= 1 && slot <= blockEntity.algorithms.length && blockEntity.algorithms[slot-1] != null)
-            blockEntity.algorithms[slot - 1].input(args);
+            blockEntity.algorithms[slot - 1].input(args, (res) -> {
+                if (blockEntity.forward[slot - 1] && blockEntity.algorithms[slot] != null) {
+                    try {
+                        if (res instanceof ByteBuffer) res = new String(((ByteBuffer) res).array(), StandardCharsets.ISO_8859_1);
+                        else if (res instanceof byte[]) res = new String((byte[]) res, StandardCharsets.ISO_8859_1);
+                        this.input(computer, new ObjectArguments(slot + 1, res));
+                    } catch (LuaException e) {
+                        ASICraft.LOG.error("Could not process chained input", e);
+                    }
+                } else computer.queueEvent("asicraft.partial_result", computer.getAttachmentName(), slot, res);
+            });
         else throw new LuaException("Slot does not have a card inserted");
     }
 
@@ -81,20 +91,24 @@ public class ExpansionBusPeripheral implements IPeripheral {
     public final void finish(IComputerAccess computer, int slot) throws LuaException {
         if (slot >= 1 && slot <= blockEntity.algorithms.length && blockEntity.algorithms[slot-1] != null)
             blockEntity.algorithms[slot-1].finish((error, res) -> {
-                if (error == null) {
-                    if (blockEntity.forward[slot-1] && blockEntity.algorithms[slot] != null) {
-                        try {
-                            if (res instanceof ByteBuffer) res = new String(((ByteBuffer)res).array(), StandardCharsets.ISO_8859_1);
-                            else if (res instanceof byte[]) res = new String((byte[])res, StandardCharsets.ISO_8859_1);
-                            blockEntity.algorithms[slot].input(new ObjectArguments(slot + 1, res));
-                            this.finish(computer, slot + 1);
-                        } catch (LuaException e) {
-                            computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot+1, false, e.getMessage());
-                        }
-                    } else computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot, true, res);
-                } else {
-                    ASICraft.LOG.error(error);
-                    computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot, false, error);
+                try {
+                    if (error == null) {
+                        if (blockEntity.forward[slot - 1] && blockEntity.algorithms[slot] != null) {
+                            try {
+                                if (res instanceof ByteBuffer) res = new String(((ByteBuffer) res).array(), StandardCharsets.ISO_8859_1);
+                                else if (res instanceof byte[]) res = new String((byte[]) res, StandardCharsets.ISO_8859_1);
+                                blockEntity.algorithms[slot].input(new ObjectArguments(slot + 1, res), (ignored) -> {});
+                                this.finish(computer, slot + 1);
+                            } catch (LuaException e) {
+                                computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot + 1, false, e.getMessage());
+                            }
+                        } else computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot, true, res);
+                    } else {
+                        ASICraft.LOG.error(error);
+                        computer.queueEvent("asicraft.result", computer.getAttachmentName(), slot, false, error);
+                    }
+                } catch (Exception e) {
+                    ASICraft.LOG.error("Could not process result for finish operation!", e);
                 }
             });
         else throw new LuaException("Slot does not have a card inserted");
@@ -107,7 +121,7 @@ public class ExpansionBusPeripheral implements IPeripheral {
         if (!(slot >= 1 && slot <= blockEntity.algorithms.length && blockEntity.algorithms[slot-1] != null))
             throw new LuaException("Slot does not have a card inserted");
         IAlgorithm algo = blockEntity.algorithms[slot-1];
-        algo.input(args);
+        algo.input(args, (ignored) -> {});
         this.finish(computer, slot);
         int _destSlot = slot;
         while (blockEntity.forward[_destSlot-1]) _destSlot++;

@@ -20,5 +20,10 @@
   "algorithm.asicraft.decode_aes": "AES Decryptor",
   "algorithm.asicraft.encode_rsa": "RSA Encryptor",
   "algorithm.asicraft.decode_rsa": "RSA Decryptor",
-  "algorithm.asicraft.generate_rsa": "RSA Key Generator"
+  "algorithm.asicraft.generate_rsa": "RSA Key Generator",
+  "algorithm.asicraft.encode_chacha20": "ChaCha20 Encryptor",
+  "algorithm.asicraft.decode_chacha20": "ChaCha20 Decryptor",
+  "algorithm.asicraft.transform_pbkdf2": "PBKDF2 Password Hasher",
+  "algorithm.asicraft.transform_sha256": "SHA-256 Hasher",
+  "algorithm.asicraft.transform_sha3": "SHA3-256 Hasher"
 }

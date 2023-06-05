@@ -13,6 +13,5 @@ public class ASICraft {
     
     public static void init() {
         Registry.register();
-
     }
 }

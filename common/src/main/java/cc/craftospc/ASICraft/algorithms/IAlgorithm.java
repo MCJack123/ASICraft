@@ -9,6 +9,6 @@ public interface IAlgorithm {
     String[][] getAvailableProperties();
     Object getProperty(String name);
     void setProperty(String name, IArguments value) throws LuaException;
-    void input(IArguments args) throws LuaException;
+    void input(IArguments args, IAlgorithmPartialResultCallback callback) throws LuaException;
     void finish(IAlgorithmFinishCallback callback) throws LuaException;
 }

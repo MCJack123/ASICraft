@@ -1,5 +1,9 @@
-package cc.craftospc.ASICraft.algorithms;
+package cc.craftospc.ASICraft.algorithms.crypto;
 
+import cc.craftospc.ASICraft.algorithms.AlgorithmRegistry;
+import cc.craftospc.ASICraft.algorithms.IAlgorithm;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmFinishCallback;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmPartialResultCallback;
 import dan200.computercraft.api.lua.IArguments;
 import dan200.computercraft.api.lua.LuaException;
 
@@ -13,6 +17,8 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Objects;
 
 public class RSAEncodeAlgorithm implements IAlgorithm {
+    private boolean isProcessing = false;
+    private boolean partial = false;
     private PKCS1EncodedKey key = null;
     private Cipher cipher = null;
     private ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -22,6 +28,7 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
     }
 
     public static class PKCS1EncodedKey implements RSAPrivateKey {
+        private boolean isProcessing = false;
         protected BigInteger modulus;
         protected BigInteger exponent;
         protected byte[] keyData;
@@ -37,18 +44,18 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
             int size;
             if ((data[pos] & 0x80) != 0) {
                 int len = data[pos++] & 0x7F;
-                size = new BigInteger(data, pos, len).intValue();
+                size = new BigInteger(1, data, pos, len).intValue();
                 pos += len;
-            } else size = data[pos++] & 0xFF;
-            modulus = new BigInteger(data, pos, size);
+            } else size = data[pos++];
+            modulus = new BigInteger(1, data, pos, size);
             pos += size;
             if (data[pos++] != 2) throw new InvalidParameterException("Second entry in key is not an INTEGER");
             if ((data[pos] & 0x80) != 0) {
                 int len = data[pos++] & 0x7F;
-                size = new BigInteger(data, pos, len).intValue();
+                size = new BigInteger(1, data, pos, len).intValue();
                 pos += len;
-            } else size = data[pos++] & 0xFF;
-            exponent = new BigInteger(data, pos, size);
+            } else size = data[pos++];
+            exponent = new BigInteger(1, data, pos, size);
         }
 
         public PKCS1EncodedKey(PKCS1EncodedPublicKey key) {
@@ -103,6 +110,7 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
     @Override
     public String[][] getAvailableProperties() {
         return new String[][] {
+            new String[] {"partial", "boolean"},
             new String[] {"key", "string"},
             new String[] {"isPublic", "boolean"},
         };
@@ -110,7 +118,9 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
 
     @Override
     public Object getProperty(String name) {
-        if (Objects.equals(name, "key")) {
+        if (Objects.equals(name, "partial")) {
+            return partial;
+        } else if (Objects.equals(name, "key")) {
             if (key == null) return null;
             return ByteBuffer.wrap(key.getEncoded());
         } else if (Objects.equals(name, "isPublic")) {
@@ -121,7 +131,8 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
     @Override
     public void setProperty(String name, IArguments value) throws LuaException {
         if (cipher != null) throw new LuaException("Cannot change properties while input is in progress");
-        if (Objects.equals(name, "key")) {
+        if (Objects.equals(name, "partial")) partial = value.getBoolean(2);
+        else if (Objects.equals(name, "key")) {
             ByteBuffer str = value.getBytes(2);
             byte[] data = new byte[str.capacity()];
             str.get(data);
@@ -135,7 +146,8 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
     }
 
     @Override
-    public void input(IArguments args) throws LuaException {
+    public void input(IArguments args, IAlgorithmPartialResultCallback callback) throws LuaException {
+        if (isProcessing) throw new LuaException("Card is currently processing data");
         ByteBuffer data = args.getBytes(1);
         byte[] bytes = new byte[data.capacity()];
         data.get(bytes);
@@ -149,19 +161,28 @@ public class RSAEncodeAlgorithm implements IAlgorithm {
                 throw new LuaException("Could not create encryptor: " + e.getMessage());
             }
         }
-        output.writeBytes(cipher.update(bytes));
+        AlgorithmRegistry.queueWork(() -> {
+            byte[] res = cipher.update(bytes);
+            if (partial) callback.partialResult(res);
+            else output.writeBytes(res);
+        });
     }
 
     @Override
-    public void finish(IAlgorithmFinishCallback callback) {
-        try {
-            output.writeBytes(cipher.doFinal());
-            callback.finish(null, ByteBuffer.wrap(output.toByteArray()));
-        } catch (Exception e) {
-            callback.finish("Could not finish encryption: " + e.getMessage(), null);
-        } finally {
-            cipher = null;
-            output.reset();
-        }
+    public void finish(IAlgorithmFinishCallback callback) throws LuaException {
+        if (isProcessing) throw new LuaException("Card is currently processing data");
+        AlgorithmRegistry.queueWork(() -> {
+            isProcessing = true;
+            try {
+                output.writeBytes(cipher.doFinal());
+                callback.finish(null, ByteBuffer.wrap(output.toByteArray()));
+            } catch (Exception e) {
+                callback.finish("Could not finish encryption: " + e.getMessage(), null);
+            } finally {
+                cipher = null;
+                isProcessing = false;
+                output.reset();
+            }
+        });
     }
 }

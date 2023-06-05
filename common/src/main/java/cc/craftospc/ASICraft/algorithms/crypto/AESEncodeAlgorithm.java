@@ -1,5 +1,9 @@
-package cc.craftospc.ASICraft.algorithms;
+package cc.craftospc.ASICraft.algorithms.crypto;
 
+import cc.craftospc.ASICraft.algorithms.AlgorithmRegistry;
+import cc.craftospc.ASICraft.algorithms.IAlgorithm;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmFinishCallback;
+import cc.craftospc.ASICraft.algorithms.IAlgorithmPartialResultCallback;
 import dan200.computercraft.api.lua.IArguments;
 import dan200.computercraft.api.lua.LuaException;
 
@@ -12,6 +16,8 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class AESEncodeAlgorithm implements IAlgorithm {
+    private boolean isProcessing = false;
+    private boolean partial = false;
     private byte[] key = new byte[32];
     private int keyLen = 16;
     private byte[] iv = new byte[16];
@@ -26,6 +32,7 @@ public class AESEncodeAlgorithm implements IAlgorithm {
     @Override
     public String[][] getAvailableProperties() {
         return new String[][] {
+            new String[] {"partial", "boolean"},
             new String[] {"cipherMode", "string"},
             new String[] {"key", "string"},
             new String[] {"iv", "string"}
@@ -34,7 +41,9 @@ public class AESEncodeAlgorithm implements IAlgorithm {
 
     @Override
     public Object getProperty(String name) {
-        if (Objects.equals(name, "key")) {
+        if (Objects.equals(name, "partial")) {
+            return partial;
+        } else if (Objects.equals(name, "key")) {
             return ByteBuffer.wrap(key, 0, keyLen);
         } else if (Objects.equals(name, "iv")) {
             return ByteBuffer.wrap(iv);
@@ -46,7 +55,8 @@ public class AESEncodeAlgorithm implements IAlgorithm {
     @Override
     public void setProperty(String name, IArguments value) throws LuaException {
         if (cipher != null) throw new LuaException("Cannot change properties while input is in progress");
-        if (Objects.equals(name, "key")) {
+        if (Objects.equals(name, "partial")) partial = value.getBoolean(2);
+        else if (Objects.equals(name, "key")) {
             ByteBuffer str = value.getBytes(2);
             if (str.capacity() != 32 && str.capacity() != 24 && str.capacity() != 16) throw new LuaException("bad argument #3 (key must be 16, 24, or 32 bytes long)");
             keyLen = str.capacity();
@@ -65,7 +75,8 @@ public class AESEncodeAlgorithm implements IAlgorithm {
     }
 
     @Override
-    public void input(IArguments args) throws LuaException {
+    public void input(IArguments args, IAlgorithmPartialResultCallback callback) throws LuaException {
+        if (isProcessing) throw new LuaException("Card is currently processing data");
         ByteBuffer data = args.getBytes(1);
         byte[] bytes = new byte[data.capacity()];
         data.get(bytes);
@@ -79,19 +90,28 @@ public class AESEncodeAlgorithm implements IAlgorithm {
                 throw new LuaException("Could not create encryptor: " + e.getMessage());
             }
         }
-        output.writeBytes(cipher.update(bytes));
+        AlgorithmRegistry.queueWork(() -> {
+            byte[] res = cipher.update(bytes);
+            if (partial) callback.partialResult(res);
+            else output.writeBytes(res);
+        });
     }
 
     @Override
-    public void finish(IAlgorithmFinishCallback callback) {
-        try {
-            output.writeBytes(cipher.doFinal());
-            callback.finish(null, ByteBuffer.wrap(output.toByteArray()));
-        } catch (Exception e) {
-            callback.finish("Could not finish encryption: " + e.getMessage(), null);
-        } finally {
-            cipher = null;
-            output.reset();
-        }
+    public void finish(IAlgorithmFinishCallback callback) throws LuaException {
+        if (isProcessing) throw new LuaException("Card is currently processing data");
+        AlgorithmRegistry.queueWork(() -> {
+            isProcessing = true;
+            try {
+                output.writeBytes(cipher.doFinal());
+                callback.finish(null, ByteBuffer.wrap(output.toByteArray()));
+            } catch (Exception e) {
+                callback.finish("Could not finish encryption: " + e.getMessage(), null);
+            } finally {
+                cipher = null;
+                isProcessing = false;
+                output.reset();
+            }
+        });
     }
 }

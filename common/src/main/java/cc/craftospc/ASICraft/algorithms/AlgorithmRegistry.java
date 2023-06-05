@@ -1,7 +1,15 @@
 package cc.craftospc.ASICraft.algorithms;
 
+import cc.craftospc.ASICraft.ASICraft;
+//import cc.craftospc.ASICraft.algorithms.audio.*;
+//import cc.craftospc.ASICraft.algorithms.compression.*;
+import cc.craftospc.ASICraft.algorithms.crypto.*;
+//import cc.craftospc.ASICraft.algorithms.image.*;
+//import cc.craftospc.ASICraft.algorithms.video.*;
+
 import javax.annotation.Nonnull;
-import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class AlgorithmRegistry {
     public static final String[] ALGORITHMS = new String[] {
@@ -16,7 +24,6 @@ public class AlgorithmRegistry {
         "transform_pbkdf2",
         "transform_sha256",
         "transform_sha3",
-        "transform_blake3",
         // Audio codecs
         "encode_mp3",
         "decode_mp3",
@@ -30,7 +37,6 @@ public class AlgorithmRegistry {
         "decode_m4a",
         "encode_dfpwm",
         "decode_dfpwm",
-        // Audio transformers
         "transform_resample",
         "transform_mix_mono",
         // Image codecs
@@ -42,7 +48,6 @@ public class AlgorithmRegistry {
         "decode_webp",
         "encode_gif",
         "decode_gif",
-        // Image transformers
         "transform_quantize",
         "transform_pixelize",
         // Video codecs
@@ -73,6 +78,52 @@ public class AlgorithmRegistry {
         else if (type.equals("encode_rsa")) return new RSAEncodeAlgorithm();
         else if (type.equals("decode_rsa")) return new RSADecodeAlgorithm();
         else if (type.equals("generate_rsa")) return new RSAKeyGeneratorAlgorithm();
+        else if (type.equals("encode_chacha20")) return new ChaCha20EncodeAlgorithm();
+        else if (type.equals("decode_chacha20")) return new ChaCha20DecodeAlgorithm();
+        else if (type.equals("transform_pbkdf2")) return new PBKDF2TransformAlgorithm();
+        else if (type.equals("transform_sha256")) return new SHA256TransformAlgorithm();
+        else if (type.equals("transform_sha3")) return new SHA3TransformAlgorithm();
         return null;
+    }
+
+    public static Thread workerThread = null;
+    private static final Queue<Runnable> workQueue = new ConcurrentLinkedQueue<>();
+    private static final Runnable workLoop = () -> {
+        Thread thread = workerThread;
+        while (true) {
+            while (workQueue.isEmpty()) {
+                synchronized (thread) {
+                    try {
+                        thread.wait();
+                    } catch (InterruptedException e) {
+                        if (workerThread == thread) workerThread = null;
+                        return;
+                    }
+                }
+            }
+            Runnable work = workQueue.remove();
+            try {work.run();}
+            catch (Exception e) {ASICraft.LOG.error("Exception thrown in worker thread!", e);}
+        }
+    };
+
+    public static void queueWork(Runnable work) {
+        workQueue.add(work);
+        if (workerThread == null) {
+            workerThread = new Thread(workLoop);
+            workerThread.setName("ASICraft Worker Thread");
+            workerThread.start();
+        } else {
+            synchronized (workerThread) {
+                workerThread.notifyAll();
+            }
+        }
+    }
+
+    public static void shutdown() {
+        if (workerThread != null) {
+            workerThread.interrupt();
+            workerThread = null;
+        }
     }
 }

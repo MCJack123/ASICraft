@@ -4,6 +4,8 @@
   "block.asicraft.expansion_bus_tier2": "Expansion Bus (Tier 2)",
   "block.asicraft.expansion_bus_tier3": "Expansion Bus (Tier 3)",
   "block.asicraft.microchip_designer": "Microchip Designer",
+  "gui.asicraft.expansion_bus.forward.disabled.tooltip": "The output of the last card will not be sent to the next card.",
+  "gui.asicraft.expansion_bus.forward.enabled.tooltip": "The output of the last card will be sent to the next card automatically.",
   "item.asicraft.accelerator_card": "Accelerator Card",
   "item.asicraft.card_builder": "Card Builder",
   "item.asicraft.circuit_board": "Circuit Board",
@@ -12,8 +14,11 @@
   "item.asicraft.expansion_bus_tier3": "Expansion Bus (Tier 3)",
   "item.asicraft.microchip": "Microchip",
   "item.asicraft.microchip_designer": "Microchip Designer",
-  "item.asicraft.microchip_recipe": "Microchip Recipe",
+  "item.asicraft.microchip_recipe": "Algorithm",
   "itemGroup.asicraft": "ASICraft",
   "algorithm.asicraft.encode_aes": "AES Encryptor",
-  "algorithm.asicraft.decode_aes": "AES Decryptor"
+  "algorithm.asicraft.decode_aes": "AES Decryptor",
+  "algorithm.asicraft.encode_rsa": "RSA Encryptor",
+  "algorithm.asicraft.decode_rsa": "RSA Decryptor",
+  "algorithm.asicraft.generate_rsa": "RSA Key Generator"
 }

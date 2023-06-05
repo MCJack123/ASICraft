@@ -34,7 +34,7 @@ public class ASICraftForge implements IPeripheralProvider {
     @Override
     public LazyOptional<IPeripheral> getPeripheral(Level world, BlockPos pos, Direction side) {
         if (world.getBlockEntity(pos) instanceof ExpansionBusBlockEntity)
-            return LazyOptional.of(() -> new ExpansionBusPeripheral((ExpansionBusBlockEntity) world.getBlockEntity(pos)));
+            return LazyOptional.of(() -> ((ExpansionBusBlockEntity) world.getBlockEntity(pos)).peripheral);
         return LazyOptional.empty();
     }
 }

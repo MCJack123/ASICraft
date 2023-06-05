@@ -10,6 +10,6 @@ public class ASICraftFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         ASICraft.init();
-        PeripheralLookup.get().registerForBlockEntity((entity, direction) -> new ExpansionBusPeripheral(entity), Registry.BlockEntities.EXPANSION_BUS.get());
+        PeripheralLookup.get().registerForBlockEntity((entity, direction) -> entity.peripheral, Registry.BlockEntities.EXPANSION_BUS.get());
     }
 }

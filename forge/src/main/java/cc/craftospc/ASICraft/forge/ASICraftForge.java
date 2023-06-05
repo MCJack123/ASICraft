@@ -20,6 +20,7 @@ public class ASICraftForge implements IPeripheralProvider {
     public ASICraftForge() {
         // Submit our event bus to let architectury register our content on the right time
         EventBuses.registerModEventBus(ASICraft.MOD_ID, FMLJavaModLoadingContext.get().getModEventBus());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
         ASICraft.init();
         ForgeComputerCraftAPI.registerPeripheralProvider(this);
     }
